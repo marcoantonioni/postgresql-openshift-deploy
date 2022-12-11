@@ -20,7 +20,7 @@ oc get template -n openshift ${TEMPLATE} -o yaml > ./${TEMPLATE_TARGET_NAME}
 
 #--------------------------------
 # for each deployment
-DEPLCFG_SUFFIX=-3
+DEPLCFG_SUFFIX=-1
 DEPLCFG_NAME=my-postgres-dc${DEPLCFG_SUFFIX}.yaml
 TEMPLATE_VALUES=${TEMPLATE}${DEPLCFG_SUFFIX}-params.values
 APP_NAME=my-postgresql${DEPLCFG_SUFFIX}
@@ -29,6 +29,7 @@ APP_NAME=my-postgresql${DEPLCFG_SUFFIX}
 # set param values
 MEM_LIMIT=2Gi
 PG_DBNAME=mydb
+PG_SCHEMA="schema1"
 PG_USER=postgres
 PG_PWD=post01gres
 PG_VOL_SIZE=10Gi
@@ -77,6 +78,7 @@ cat << EOF > rolling-strategy${DEPLCFG_SUFFIX}.yaml
                 echo 'Creating database ${PG_DBNAME}...' && 
                 sleep 1 && 
                 PGPASSWORD=${PG_PWD} psql -h ${APP_NAME} -U ${PG_USER} -c 'create database ${PG_DBNAME}' && 
+                if [ "" != "${PG_SCHEMA}" ]; then echo "Creating schema ${PG_SCHEMA}..."; PGPASSWORD=${PG_PWD} psql -h ${APP_NAME} -U ${PG_USER} -d ${PG_DBNAME} -c 'create schema ${PG_SCHEMA}'; else echo "No schema"; fi &&
                 echo 'done !'
             containerName: ${APP_NAME}
 EOF
