@@ -1,7 +1,9 @@
+#========================================
+# passi per deployment config e relativo pod Postgres
+#========================================
 
-
-oc get templates -n openshift -o custom-columns=NAME:.metadata.name|grep -i ^postgres
-
+#--------------------------------
+# opzionale per test
 #--------------------------------
 # new namespace
 TNS=test-postgres
@@ -11,6 +13,9 @@ while [ "Terminating" = ""$(oc get ns ${TNS} -o json | jq .status.phase -r) ]; d
 oc new-project ${TNS}
 while [ "Active" != ""$(oc get ns ${TNS} -o json | jq .status.phase -r) ]; do echo "wait activation..."; sleep 1; done
 
+#--------------------------------
+# opzionale per test
+#--------------------------------
 #---------------------------------
 # save template locally
 TEMPLATE=postgresql-persistent
@@ -18,26 +23,34 @@ TEMPLATE_TARGET_NAME=my-postgresql-template.yaml
 
 oc get template -n openshift ${TEMPLATE} -o yaml > ./${TEMPLATE_TARGET_NAME}
 
-#--------------------------------
-# for each deployment
-DEPLCFG_SUFFIX=-1
-DEPLCFG_NAME=my-postgres-dc${DEPLCFG_SUFFIX}.yaml
-TEMPLATE_VALUES=${TEMPLATE}${DEPLCFG_SUFFIX}-params.values
-APP_NAME=my-postgresql${DEPLCFG_SUFFIX}
 
 #--------------------------------
-# set param values
+# steps for resource creation
+#--------------------------------
+
+#--------------------------------
+# 1. for each deployment
+
+DEPLCFG_SUFFIX=-1
+DEPLCFG_PREFIX=my-postgres-dc
+APP_NAME_PREFIX=my-postgresql
+
+DEPLCFG_NAME=${DEPLCFG_PREFIX}${DEPLCFG_SUFFIX}.yaml
+TEMPLATE_VALUES=${TEMPLATE}${DEPLCFG_SUFFIX}-params.values
+APP_NAME=${APP_NAME_PREFIX}${DEPLCFG_SUFFIX}
+
+#--------------------------------
+# 2. set param values
 MEM_LIMIT=2Gi
-PG_DBNAME=mydb
-PG_SCHEMA="schema1"
+PG_DBNAME=aon
+PG_SCHEMA="aon"
 PG_USER=postgres
 PG_PWD=post01gres
 PG_VOL_SIZE=10Gi
 PG_VER=latest
 
-
 #------------------------------
-# update template params values
+# 3. update template params values
 oc process --parameters -f ./${TEMPLATE_TARGET_NAME} | grep -v NAME | awk '{print $1"="}' > ./${TEMPLATE_VALUES}
 sed 's/MEMORY_LIMIT=/MEMORY_LIMIT='${MEM_LIMIT}'/g' -i ./${TEMPLATE_VALUES}
 sed 's/POSTGRESQL_USER=/POSTGRESQL_USER='${PG_USER}'/g' -i ./${TEMPLATE_VALUES}
@@ -47,11 +60,11 @@ sed 's/VOLUME_CAPACITY=/VOLUME_CAPACITY='${PG_VOL_SIZE}'/g' -i ./${TEMPLATE_VALU
 sed 's/POSTGRESQL_VERSION=/POSTGRESQL_VERSION='${PG_VER}'/g' -i ./${TEMPLATE_VALUES}
 
 #------------------------------
-# generate deploymentconfig
+# 4. generate deploymentconfig
 oc process -f ./${TEMPLATE_TARGET_NAME} --param-file=./${TEMPLATE_VALUES} -o yaml > ./${DEPLCFG_NAME}
 
 #------------------------------
-# update names from template
+# 5. update names from template
 sed 's/claimName: postgresql$/claimName: '${APP_NAME}'/g' -i ./${DEPLCFG_NAME}
 sed 's/name: postgresql$/name: '${APP_NAME}'/g' -i ./${DEPLCFG_NAME}
 sed 's/- postgresql$/- '${APP_NAME}'/g' -i ./${DEPLCFG_NAME}
@@ -59,7 +72,7 @@ sed 's/expose-uri: postgres/expose-uri: '${APP_NAME}'/g' -i ./${DEPLCFG_NAME}
 sed 's/name=="postgresql")].port/name=="'${APP_NAME}'")].port/g' -i ./${DEPLCFG_NAME}
 
 #------------------------------
-# set post hook for db creation
+# 6. set post hook for db/schema creation
 cat << EOF > rolling-strategy${DEPLCFG_SUFFIX}.yaml
       type: Rolling
       rollingParams:
@@ -84,25 +97,36 @@ cat << EOF > rolling-strategy${DEPLCFG_SUFFIX}.yaml
 EOF
 
 #------------------------------
-# update rolling strategy
+# 7. update rolling strategy
 sed -i '/type: Recreate/r rolling-strategy'${DEPLCFG_SUFFIX}'.yaml' ./${DEPLCFG_NAME}
 sed -i 's/type: Recreate//g' ./${DEPLCFG_NAME}
 
 #------------------------------
-# deploy dc
+# 8. deploy dc
 oc create -f ./${DEPLCFG_NAME}
 
-
+#------------------------------
+# 9. finished, wait for post hook service completion
 
 
 
 
 #-----------------------
+# appunti comandi vari
+#-----------------------
+
+# legge lista dei template 'postgres' disponibili nel cluster 
+oc get templates -n openshift -o custom-columns=NAME:.metadata.name|grep -i ^postgres
+
+
+# nuovo rollout app postgres
 oc rollout latest ${APP_NAME}
 
+# lista pod running
 oc get pods -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}' | grep Running
 
-# cat /var/lib/pgsql/data/userdata/log/
+# log di postgres
+cat /var/lib/pgsql/data/userdata/log/...file giornaliero...
 
 
 
