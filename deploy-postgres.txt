@@ -46,7 +46,7 @@ PG_DBNAME=aon
 PG_SCHEMA="aon"
 PG_USER=postgres
 PG_PWD=post01gres
-PG_VOL_SIZE=10Gi
+PG_VOL_SIZE=1Gi
 PG_VER=latest
 
 #------------------------------
@@ -102,11 +102,21 @@ sed -i '/type: Recreate/r rolling-strategy'${DEPLCFG_SUFFIX}'.yaml' ./${DEPLCFG_
 sed -i 's/type: Recreate//g' ./${DEPLCFG_NAME}
 
 #------------------------------
-# 8. deploy dc
+# 8. [OPTIONAL] set your service account name, es: [default | postgres-cp4ba | ...your-own...]
+SA_NAME=default
+sed -i 's/      spec:/      spec:\n        serviceAccountName: '${SA_NAME}'/g' ./${DEPLCFG_NAME}
+
+#------------------------------
+# 9. [OPTIONAL] set your storage class name (skipping this step the PVC will be bound to default storage class in your cluster), es [ibmc-block-retain-gold, ...your-own...]
+STORAGE_CNAME=ibmc-block-retain-gold
+sed -i 's/- ReadWriteOnce/- ReadWriteOnce\n    storageClassName: '${STORAGE_CNAME}'/g' ./${DEPLCFG_NAME}
+
+#------------------------------
+# 10. deploy dc
 oc create -f ./${DEPLCFG_NAME}
 
 #------------------------------
-# 9. finished, wait for post hook service completion
+# 11. finished, wait for post hook service completion
 
 
 
@@ -127,6 +137,4 @@ oc get pods -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{
 
 # log di postgres
 cat /var/lib/pgsql/data/userdata/log/...file giornaliero...
-
-
 
