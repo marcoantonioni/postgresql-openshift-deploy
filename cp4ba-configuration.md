@@ -33,3 +33,28 @@ Add the 'custom_xml' section like in the example here:
           </transaction> 
         </server>
 ```
+
+Save the CR 'icp4adeploy' and wait for the CP4BA operator to update the content of the config map 'icp4adeploy-bastudio-overrides-configmap'; when the value with key 'custom.xml' will appear
+
+```
+Data
+
+custom.xml
+<?xml version="1.0" encoding="UTF-8"?>
+  <server> 
+    <library id="PostgreS...
+```
+
+you can force restart the pod 'icp4adeploy-bastudio-deployment-0'.
+
+Once the new pod has been restarted, check for the presence of the xml snippet in the folder
+
+```
+oc exec -n cp4ba icp4adeploy-bastudio-deployment-0 -- ls -al /opt/ibm/wlp/usr/servers/defaultServer/configDropins/overrides
+
+oc exec -n cp4ba icp4adeploy-bastudio-deployment-0 -- cat /opt/ibm/wlp/usr/servers/defaultServer/configDropins/overrides/custom.xml
+```
+
+Now you may may deploy your apps using the jdbc datasource named "jdbc/mydb". 
+
+You may also try to deploy the test application in 'apps' folder of this repo.
