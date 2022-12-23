@@ -59,7 +59,7 @@ sed 's/expose-uri: postgres/expose-uri: '${APP_NAME}'/g' -i ./${DEPLCFG_NAME}
 sed 's/name=="postgresql")].port/name=="'${APP_NAME}'")].port/g' -i ./${DEPLCFG_NAME}
 ```
 
-# 6. set post hook for db/schema creation
+6. set post hook for db/schema creation
 ```
 cat << EOF > rolling-strategy.yaml
       type: Rolling
