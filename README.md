@@ -105,6 +105,6 @@ oc create -f ./${DEPLCFG_NAME}
 Finished, wait for post hook pod service completion
 
 
-# How to CP4BA - Deploy and configure an external database alongside your BAW
+## How to CP4BA - Deploy and configure an external database alongside your BAW
 
 see cp4ba-configuration.md
