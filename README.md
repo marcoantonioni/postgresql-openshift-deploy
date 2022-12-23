@@ -12,6 +12,7 @@ TEMPLATE_TARGET_NAME=my-postgresql-template.yaml
 
 oc get template -n openshift ${TEMPLATE} -o yaml > ./${TEMPLATE_TARGET_NAME}
 ```
+## Deploy
 
 1. set deployment names
 ```
