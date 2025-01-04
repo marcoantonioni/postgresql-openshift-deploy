@@ -4,9 +4,9 @@ UPDATE: 2025 January
 
 AS FROM: https://access.redhat.com/solutions/7028693
 
-```
+<pre>
 oc process fails in RHOCP 4.12 with "error unable to process template: the namespace of the provided object does not match the namespace sent on the request"
-```
+</pre>
 
 ## set namespace to deploy to
 ```
