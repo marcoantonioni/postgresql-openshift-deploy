@@ -1,5 +1,13 @@
 # Deploy PostgreSQL in Openshift
 
+UPDATE: 2025 January
+
+AS FROM: https://access.redhat.com/solutions/7028693
+
+```
+oc process fails in RHOCP 4.12 with "error unable to process template: the namespace of the provided object does not match the namespace sent on the request"
+```
+
 ## set namespace to deploy to
 ```
 TNS=<...your-namespace...>
@@ -45,9 +53,9 @@ sed 's/VOLUME_CAPACITY=/VOLUME_CAPACITY='${PG_VOL_SIZE}'/g' -i ./${TEMPLATE_VALU
 sed 's/POSTGRESQL_VERSION=/POSTGRESQL_VERSION='${PG_VER}'/g' -i ./${TEMPLATE_VALUES}
 ```
 
-4. generate deploymentconfig
+4. generate deploymentconfig (UPDATED)
 ```
-oc process -f ./${TEMPLATE_TARGET_NAME} --param-file=./${TEMPLATE_VALUES} -o yaml > ./${DEPLCFG_NAME}
+oc process postgresql-persistent -n openshift -o yaml --param-file=./${TEMPLATE_VALUES} > ./${DEPLCFG_NAME}
 ```
 
 5. update names from template
@@ -93,13 +101,13 @@ sed -i 's/type: Recreate//g' ./${DEPLCFG_NAME}
 
 8. [OPTIONAL] set your storage class name (skipping this step the PVC will be bound to default storage class in your cluster), es [ibmc-block-retain-gold, ...your-own...]
 ```
-STORAGE_CNAME=ibmc-block-retain-gold
+STORAGE_CNAME=managed-nfs-storage
 sed -i 's/- ReadWriteOnce/- ReadWriteOnce\n    storageClassName: '${STORAGE_CNAME}'/g' ./${DEPLCFG_NAME}
 ```
 
-9. deploy dc
+9. deploy dc (UPDATED)
 ```
-oc create -f ./${DEPLCFG_NAME}
+oc create -n ${TNS} -f ./${DEPLCFG_NAME}
 ```
 
 Finished, wait for post hook pod service completion
